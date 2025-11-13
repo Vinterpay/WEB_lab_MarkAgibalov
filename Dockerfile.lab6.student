@@ -1,0 +1,23 @@
+﻿FROM php:8.2-fpm
+
+# Устанавливаем системные зависимости
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    unzip \
+    git \
+    curl \
+    && docker-php-ext-install pdo pdo_mysql mysqli zip
+
+# Устанавливаем Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html/lab6
+
+# Копируем composer файлы и устанавливаем зависимости
+COPY ./www/lab6/composer.json ./www/lab6/composer.lock ./
+RUN composer install --no-dev --optimize-autoloader
+
+# Копируем остальные файлы
+COPY ./www/lab6 /var/www/html/lab6
+
+CMD ["php-fpm"]
