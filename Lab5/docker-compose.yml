@@ -1,119 +1,35 @@
 ﻿version: '3.8'
 services:
-  nginx:
+  lab5_nginx:
     image: nginx:alpine
     container_name: lab5_nginx
     ports:
-      - "8080:80"  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - lab5-network
-
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
+      - "8080:80"
+    volumes:
       - ./www:/var/www/html
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - php
-    restart: unless-stopped  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - lab5_php
+    restart: unless-stopped
     networks:
       - lab5-network
 
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
-      - lab5-network
-
-  php:
+  lab5_php:
     build: .
-    container_name: lab5_php  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - lab5-network
-
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
+    dockerfile: Dockerfile # Убедимся, что используем правильный Dockerfile
+    container_name: lab5_php
+    volumes:
       - ./www:/var/www/html
     expose:
       - "9000"
-    restart: unless-stopped  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+    restart: unless-stopped
     networks:
       - lab5-network
-
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
     depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
+      - lab5_db
+      - lab5_kafka # Добавляем зависимость от Kafka
 
-      - lab5-network
-
-  db:
+  lab5_db:
     image: mysql:8.0
     container_name: lab5_db
     environment:
@@ -122,71 +38,35 @@ services:
       MYSQL_USER: student_user
       MYSQL_PASSWORD: student_pass
     ports:
-      - "3307:3306"  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - "3307:3306"
+    volumes:
+      - db_/var/lib/mysql
+    restart: unless-stopped
     networks:
       - lab5-network
+    command: --default-authentication-plugin=mysql_native_password
 
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
-      - db_data:/var/lib/mysql
-    restart: unless-stopped  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - lab5-network
-
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
-      - lab5-network
-
-  adminer:
+  lab5_adminer:
     image: adminer
     container_name: lab5_adminer
     restart: always
     ports:
       - "8081:8080"
     depends_on:
-      - db  lab5_zookeeper:
+      - lab5_db
+    networks:
+      - lab5-network
+
+  # --- Сервисы для ЛР7 (Kafka, вариант 1 - "Регистрация студента") ---
+  lab5_zookeeper:
     image: bitnami/zookeeper:latest
     container_name: lab5_zookeeper
     ports:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    volumes:
+      - zookeeper_/var/lib/zookeeper
     networks:
       - lab5-network
 
@@ -201,57 +81,17 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
     depends_on:
       - lab5_zookeeper
+    volumes:
+      - kafka_/var/lib/kafka
     networks:
       - lab5-network
 
-      - lab5-network  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - lab5-network
+volumes:
+  db_:
+  kafka_:
+  zookeeper_:
 
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
-  db_data:  lab5_zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: lab5_zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-    networks:
-      - lab5-network
-
-  lab5_kafka:
-    image: bitnami/kafka:latest
-    container_name: lab5_kafka
-    ports:
-      - "9092:9092"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=lab5_zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-    depends_on:
-      - lab5_zookeeper
-    networks:
-      - lab5-network
-
+networks:
   lab5-network:
     driver: bridge
 
