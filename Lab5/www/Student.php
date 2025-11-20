@@ -1,8 +1,11 @@
 ﻿<?php
 class Student {
-    private $pdo;
+    private \;
+    private \;
     
     public function __construct($pdo) {
+        $this->pdo = $pdo;
+        $this->kafkaManager = new KafkaManager();
         $this->pdo = $pdo;
     }
     
@@ -78,3 +81,4 @@ class Student {
     }
 }
 ?>
+

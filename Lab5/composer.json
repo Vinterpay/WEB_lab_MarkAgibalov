@@ -1,0 +1,10 @@
+﻿{
+    "require": {
+        "guzzlehttp/guzzle": "^7.10",
+        "nmred/kafka-php": "^0.2.0"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist"
+    }
+}

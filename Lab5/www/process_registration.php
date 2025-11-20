@@ -1,6 +1,7 @@
 ﻿<?php
 header('Content-Type: text/html; charset=utf-8');
 include 'Student.php';
+include 'KafkaManager.php';
 
 try {
     $pdo = new PDO(
@@ -125,4 +126,6 @@ try {
     </div>
 </body>
 </html>
+
+
 

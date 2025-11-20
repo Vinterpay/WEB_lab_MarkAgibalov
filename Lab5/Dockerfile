@@ -1,35 +1,30 @@
 ﻿FROM php:8.2-fpm
 
-# Устанавливаем системные зависимости и расширения MySQL
 RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
+    git \
     unzip \
-    && docker-php-ext-install pdo pdo_mysql mysqli
+    curl \
+    librdkafka-dev \
+    libzip-dev \
+    default-mysql-client
 
-# Устанавливаем Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Установка расширений PHP
+RUN docker-php-ext-install pdo pdo_mysql zip
+
+# Установка rdkafka
+RUN pecl install rdkafka && docker-php-ext-enable rdkafka
 
 WORKDIR /var/www/html
 
-# Копируем файлы зависимостей Composer из корня проекта (где запускается docker build)
-COPY composer.json composer.lock* ./
-# Устанавливаем зависимости Composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Установка Composer
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+
+COPY composer.json /var/www/html/
+RUN composer install --no-dev --optimize-autoloader
+
 COPY ./www /var/www/html
 
-# Настраиваем права
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html
-
-CMD [
-# Установка зависимостей для php-rdkafka
-RUN apt-get update && apt-get install -y \
-    librdkafka-dev \
-    && pecl install rdkafka \
-    && docker-php-ext-enable rdkafka
+# Создаем директорию для логов
+RUN mkdir -p /var/www/html/logs && chmod 777 /var/www/html/logs
 
 CMD ["php-fpm"]
-
